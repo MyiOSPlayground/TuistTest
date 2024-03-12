@@ -1,0 +1,113 @@
+//
+//  Project+Framework.swift
+//  ProjectDescriptionHelpers
+//
+//  Created by hanwe on 1/28/24.
+//
+
+import ProjectDescription
+
+extension Project {
+  
+  public static func staticFrameworkTargets(
+    name: String,
+    destinations: Destinations,
+    frameworkDependencies: [TargetDependency],
+    testDependencies: [TargetDependency],
+    targetScripts: [TargetScript] = [
+      .pre(script: "${PROJECT_DIR}/../../Tools/swiftlint --config \"${PROJECT_DIR}/../App/Resources/swiftlint.yml\"", name: "Lint")
+    ],
+    coreDataModel: [CoreDataModel],
+    resources: ResourceFileElements = ["Resources/**"],
+    sampleAppAdditionalDependencies: [TargetDependency] = [],
+    additionalSourcePaths: [String] = []
+  ) -> [Target] {
+    
+    let sourcesPath: SourceFilesList = {
+      let globs: [SourceFileGlob] = {
+        var returnValue: [SourceFileGlob] = ["Sources/**"]
+        for item in additionalSourcePaths {
+          returnValue.append(.glob(
+            Path(item)
+          ))
+        }
+        return returnValue
+      }()
+      return SourceFilesList(globs: globs)
+    }()
+    
+    let sources = Target(
+      name: name,
+      destinations: destinations,
+      product: .framework,
+      bundleId: "com.archive.\(name)",
+      deploymentTargets: .iOS("17.0"),
+      infoPlist: .default,
+      sources: sourcesPath,
+      resources: resources,
+      scripts: targetScripts,
+      dependencies: frameworkDependencies,
+      coreDataModels: coreDataModel
+    )
+    
+    let testHostApp = Target(
+      name: "\(name)TestHost",
+      destinations: destinations,
+      product: .app,
+      bundleId: "com.archive.\(name)TestHost",
+      deploymentTargets: .iOS("17.0"),
+      infoPlist: .default,
+      sources: ["TestHost/Sources/**"],
+      resources: ["TestHost/Resources/**"],
+      dependencies: [.target(name: name)]
+    )
+    
+    let sampleApp = Target(
+      name: "\(name)SampleApp",
+      destinations: destinations,
+      product: .app,
+      bundleId: "com.archive.\(name)SampleApp",
+      deploymentTargets: .iOS("17.0"),
+      infoPlist: .default,
+      sources: ["SampleApp/Sources/**"],
+      resources: ["SampleApp/Resources/**"],
+      dependencies: [.target(name: name)] + sampleAppAdditionalDependencies
+    )
+    
+    let tests = Target(
+      name: "\(name)Tests",
+      destinations: destinations,
+      product: .unitTests,
+      bundleId: "com.archive.\(name)tests",
+      deploymentTargets: .iOS("17.0"),
+      infoPlist: .default,
+      sources: ["Tests/**"],
+      resources: [],
+      dependencies: [.target(name: name), .target(name: "\(name)TestHost")] + testDependencies
+    )
+    
+    return [sources, testHostApp, tests, sampleApp]
+  }
+  
+  public static func staticUmbrellaFrameworkTargets(
+    name: String,
+    destinations: Destinations,
+    frameworkDependencies: [TargetDependency]
+  ) -> [Target] {
+    
+    let sources = Target(
+      name: name,
+      destinations: destinations,
+      product: .framework,
+      bundleId: "com.archive.\(name)",
+      deploymentTargets: .iOS("17.0"),
+      infoPlist: .default,
+      sources: [],
+      resources: [],
+      dependencies: frameworkDependencies
+    )
+    
+    return [sources]
+  }
+  
+}
