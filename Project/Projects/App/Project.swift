@@ -16,9 +16,13 @@ let project = Project.app(
       path: "../ArchiveFoundation"
     ),
     .project(
-      target: "Feature",
-      path: "../Feature"
+      target: "Splash",
+      path: "../Feature/Splash"
     )
+//    .project(
+//      target: "Feature",
+//      path: "../Feature"
+//    )
   ],
   additionalTargets: [],
   additionalSourcePaths: ["../Sources/**"],
